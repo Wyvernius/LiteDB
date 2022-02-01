@@ -34,6 +34,7 @@ namespace LiteDB.Engine
                     if (this.UpdateDocument(snapshot, collectionPage, doc, indexer, data))
                     {
                         count++;
+                        CheckNotification(collection, doc["_id"]);
                     }
                 }
 

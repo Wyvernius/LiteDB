@@ -31,7 +31,7 @@ namespace LiteDB.Engine
                     transaction.Safepoint();
 
                     this.InsertDocument(snapshot, doc, autoId, indexer, data);
-
+                    CheckNotification(collection, doc["_id"]);
                     count++;
                 }
 

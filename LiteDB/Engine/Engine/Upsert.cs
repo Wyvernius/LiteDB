@@ -35,6 +35,7 @@ namespace LiteDB.Engine
                     {
                         this.InsertDocument(snapshot, doc, autoId, indexer, data);
                         count++;
+                        CheckNotification(collection, doc["_id"]);
                     }
                 }
                 
