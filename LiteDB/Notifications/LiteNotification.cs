@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace LiteDB.Engine
+namespace LiteDB
 {
-    public partial class LiteEngine
+    public partial class LiteDatabase
     {
-        public delegate void UpdateHandler(string collectionName, string id);
+        public delegate void UpdateHandler(string collectionName, object id);
 
-        private Dictionary<string, List<UpdateHandler>> _delegates = new Dictionary<string, List<UpdateHandler>>();
+        private Dictionary<object, List<UpdateHandler>> _delegates = new Dictionary<object, List<UpdateHandler>>();
 
         /// <summary>
         /// Add a notification for a specific collection
@@ -18,7 +18,6 @@ namespace LiteDB.Engine
         /// <param name="handler">Delegate handler to call on Update/Insert</param>
         public void RegisterCollectionNotification(string collectionName, UpdateHandler handler)
         {
-
             if (!_delegates.ContainsKey(collectionName))
             {
                 _delegates.Add(collectionName, new List<UpdateHandler>());
@@ -34,7 +33,7 @@ namespace LiteDB.Engine
         /// </summary>
         public void DeRegisterAllNotifications()
         {
-            _delegates = new Dictionary<string, List<UpdateHandler>>();
+            _delegates = new Dictionary<object, List<UpdateHandler>>();
         }
 
         /// <summary>
@@ -86,7 +85,7 @@ namespace LiteDB.Engine
         /// </summary>
         /// <param name="id">Id of the document</param>
         /// <param name="handler">Delegate handler to call on Update/Insert</param>
-        public void RegisterDocumentNotification(string id, UpdateHandler handler)
+        public void RegisterDocumentNotification(object id, UpdateHandler handler)
         {
 
             if (!_delegates.ContainsKey(id))
@@ -103,7 +102,7 @@ namespace LiteDB.Engine
         /// De register all notifications for a collection
         /// </summary>
         /// <param name="id">Id of the document</param>
-        public void DeRegisterDocumentNotifications(string id)
+        public void DeRegisterDocumentNotifications(object id)
         {
             if (_delegates.ContainsKey(id))
             {
@@ -116,7 +115,7 @@ namespace LiteDB.Engine
         /// </summary>
         /// <param name="id">Id of the document</param>
         /// <param name="handler"></param>
-        public void DeRegisterDocumentNotification(string id, UpdateHandler handler)
+        public void DeRegisterDocumentNotification(object id, UpdateHandler handler)
         {
 
             if (_delegates.ContainsKey(id))
@@ -148,14 +147,24 @@ namespace LiteDB.Engine
         /// </summary>
         /// <param name="collectionName">Name of the collection to check</param>
         /// <param name="id">Id of document to check</param>
-        private void CheckNotification(string collectionName, string id)
+        private void CheckNotification(string collectionName, BsonValue id)
         {
-            if (!_delegates.ContainsKey(collectionName))
+            if (_delegates.ContainsKey(collectionName))
             {
                 foreach (UpdateHandler handler in _delegates[collectionName])
                 {
                     handler(collectionName, id);
                 }
+            }
+
+            foreach (var del in _delegates)
+            {
+                object realType = id.RawValue;
+                if (del.Key.Equals(realType))
+                    foreach (UpdateHandler handler in del.Value)
+                    {
+                        handler(collectionName, realType);
+                    }
             }
         }
     }

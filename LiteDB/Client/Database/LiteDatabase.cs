@@ -53,6 +53,8 @@ namespace LiteDB
             _engine = connectionString.CreateEngine();
             _mapper = mapper ?? BsonMapper.Global;
             _disposeOnClose = true;
+            if (_engine.GetType() == typeof(LiteEngine))
+                ((LiteEngine)_engine).EngineNotification = CheckNotification;
         }
 
         /// <summary>
@@ -72,6 +74,8 @@ namespace LiteDB
             _engine = new LiteEngine(settings);
             _mapper = mapper ?? BsonMapper.Global;
             _disposeOnClose = true;
+            if (_engine.GetType() == typeof(LiteEngine))
+                ((LiteEngine)_engine).EngineNotification = CheckNotification;
         }
 
         /// <summary>
@@ -82,6 +86,8 @@ namespace LiteDB
             _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _mapper = mapper ?? BsonMapper.Global;
             _disposeOnClose = disposeOnClose;
+            if (_engine.GetType() == typeof(LiteEngine))
+                ((LiteEngine)_engine).EngineNotification = CheckNotification;
         }
 
         #endregion

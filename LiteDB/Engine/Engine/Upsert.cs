@@ -31,14 +31,16 @@ namespace LiteDB.Engine
                     transaction.Safepoint();
 
                     // first try update document (if exists _id), if not found, do insert
-                    if (doc["_id"] == BsonValue.Null || this.UpdateDocument(snapshot, collectionPage, doc, indexer, data) == false)
+                    if (doc["_id"] != BsonValue.Null) 
                     {
-                        this.InsertDocument(snapshot, doc, autoId, indexer, data);
-                        count++;
+                        if (this.UpdateDocument(snapshot, collectionPage, doc, indexer, data) == false)
+                        {
+                            this.InsertDocument(snapshot, doc, autoId, indexer, data);
+                            count++;
+                        }
                         CheckNotification(collection, doc["_id"]);
                     }
                 }
-                
                 // returns how many document was inserted
                 return count;
             });
