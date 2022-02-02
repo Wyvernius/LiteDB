@@ -15,6 +15,7 @@ namespace LiteDB
     public partial class LiteDatabase : ILiteDatabase
     {
         #region Properties
+        private static Dictionary<string, ILiteEngine> _cachedEngine;
 
         private readonly ILiteEngine _engine;
         private readonly BsonMapper _mapper;
@@ -49,8 +50,16 @@ namespace LiteDB
                 // try upgrade if need
                 LiteEngine.Upgrade(connectionString.Filename, connectionString.Password, connectionString.Collation);
             }
+            if (_cachedEngine == null)
+                _cachedEngine = new Dictionary<string, ILiteEngine>();
 
-            _engine = connectionString.CreateEngine();
+            if (_cachedEngine.ContainsKey(connectionString.Filename))
+                _engine = _cachedEngine[connectionString.Filename];
+            else
+            {
+                _engine = connectionString.CreateEngine();
+                _cachedEngine.Add(connectionString.Filename, _engine);
+            }
             _mapper = mapper ?? BsonMapper.Global;
             _disposeOnClose = true;
             if (_engine.GetType() == typeof(LiteEngine))
