@@ -15,7 +15,7 @@ namespace LiteDB
     public class SharedEngine : ILiteEngine
     {
         private readonly EngineSettings _settings;
-        private readonly Mutex _mutex;
+        private readonly SemaphoreSlim _semaphoreSlim;
         private LiteEngine _engine;
         private int _stack = 0;
 
@@ -34,9 +34,9 @@ namespace LiteDB
                 var securitySettings = new MutexSecurity();
                 securitySettings.AddAccessRule(allowEveryoneRule);
 
-                _mutex = new Mutex(false, "Global\\" + name + ".Mutex", out _, securitySettings);
+                _semaphoreSlim = new SemaphoreSlim(1); //new Mutex(false, "Global\\" + name + ".Mutex", out _, securitySettings);
 #else
-                _mutex = new Mutex(false, "Global\\" + name + ".Mutex");
+                _semaphoreSlim = new SemaphoreSlim(1); // new Mutex(false, "Global\\" + name + ".Mutex");
 #endif
             }
             catch (NotSupportedException ex)
@@ -50,7 +50,7 @@ namespace LiteDB
         /// </summary>
         private void OpenDatabase()
         {
-            lock (_mutex)
+            lock (_semaphoreSlim)
             {
                 _stack++;
 
@@ -58,7 +58,7 @@ namespace LiteDB
                 {
                     try
                     {
-                        _mutex.WaitOne();
+                        _semaphoreSlim.Wait();
                     }
                     catch (AbandonedMutexException) { }
 
@@ -68,7 +68,7 @@ namespace LiteDB
                     }
                     catch
                     {
-                        _mutex.ReleaseMutex();
+                        _semaphoreSlim.Release(); // ();
                         _stack = 0;
                         throw;
                     }
@@ -81,7 +81,7 @@ namespace LiteDB
         /// </summary>
         private void CloseDatabase()
         {
-            lock (_mutex)
+            lock (_semaphoreSlim)
             {
                 _stack--;
 
@@ -90,7 +90,7 @@ namespace LiteDB
                     _engine.Dispose();
                     _engine = null;
 
-                    _mutex.ReleaseMutex();
+                    _semaphoreSlim.Release(); //.ReleaseMutex();
                 }
             }
         }
@@ -381,7 +381,7 @@ namespace LiteDB
                 {
                     _engine.Dispose();
 
-                    _mutex.ReleaseMutex();
+                    _semaphoreSlim.Release();
                 }
             }
         }
